@@ -20,6 +20,15 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   late TimeOfDay _dueTime;
   late TaskPriority _priority;
   late TaskStatus _status;
+  late final String _initialTitle;
+  late final String _initialDescription;
+  late final String _initialCourse;
+  late final DateTime _initialDueDate;
+  late final TimeOfDay _initialDueTime;
+  late final TaskPriority _initialPriority;
+  late final TaskStatus _initialStatus;
+  bool _allowPop = false;
+  bool _discardDialogOpen = false;
 
   static const _courses = ['CSC2074', 'MAT2032', 'General'];
 
@@ -42,6 +51,13 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         : TimeOfDay.fromDateTime(task.dueDate);
     _priority = task?.priority ?? TaskPriority.medium;
     _status = task?.status ?? TaskStatus.toDo;
+    _initialTitle = _titleController.text;
+    _initialDescription = _descriptionController.text;
+    _initialCourse = _course;
+    _initialDueDate = _dueDate;
+    _initialDueTime = _dueTime;
+    _initialPriority = _priority;
+    _initialStatus = _status;
   }
 
   @override
@@ -54,120 +70,126 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: colors.surface,
-      appBar: AppBar(
+    return PopScope<StudyTask>(
+      canPop: _allowPop,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _requestClose();
+      },
+      child: Scaffold(
         backgroundColor: colors.surface,
-        surfaceTintColor: colors.surface,
-        leading: IconButton(
-          tooltip: 'Close',
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.close_rounded),
-        ),
-        title: Text(
-          _isEditing ? 'Edit Task' : 'Add New Task',
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-        ),
-        centerTitle: true,
-        actions: [
-          TextButton(
-            onPressed: _save,
-            child: const Text(
-              'Save',
-              style: TextStyle(fontWeight: FontWeight.w800),
-            ),
+        appBar: AppBar(
+          backgroundColor: colors.surface,
+          surfaceTintColor: colors.surface,
+          leading: IconButton(
+            tooltip: 'Close',
+            onPressed: _requestClose,
+            icon: const Icon(Icons.close_rounded),
           ),
-          const SizedBox(width: 6),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-          children: [
-            const _FieldLabel('Task Title (Required)'),
-            const SizedBox(height: 7),
-            TextFormField(
-              controller: _titleController,
-              autofocus: !_isEditing,
-              textInputAction: TextInputAction.next,
-              decoration: _inputDecoration('Enter task title'),
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Please enter a task title'
-                  : null,
-            ),
-            const SizedBox(height: 18),
-            const _FieldLabel('Subject/Course'),
-            const SizedBox(height: 7),
-            DropdownButtonFormField<String>(
-              value: _course,
-              decoration: _inputDecoration('Select subject'),
-              items: _courses
-                  .map(
-                    (course) => DropdownMenuItem(
-                      value: course,
-                      child: Text(course),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) setState(() => _course = value);
-              },
-            ),
-            const SizedBox(height: 18),
-            const _FieldLabel('Description (Optional)'),
-            const SizedBox(height: 7),
-            TextFormField(
-              controller: _descriptionController,
-              minLines: 4,
-              maxLines: 6,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: _inputDecoration('Add notes or details'),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Expanded(
-                  child: _PickerButton(
-                    icon: Icons.calendar_today_rounded,
-                    label: _formatDate(_dueDate),
-                    onPressed: _pickDate,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _PickerButton(
-                    icon: Icons.schedule_rounded,
-                    label: _dueTime.format(context),
-                    onPressed: _pickTime,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            const _FieldLabel('Priority'),
-            const SizedBox(height: 8),
-            _PrioritySelector(
-              selected: _priority,
-              onSelected: (priority) => setState(() => _priority = priority),
-            ),
-            const SizedBox(height: 20),
-            const _FieldLabel('Status'),
-            const SizedBox(height: 8),
-            _StatusSelector(
-              selected: _status,
-              onSelected: (status) => setState(() => _status = status),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
+          title: Text(
+            _isEditing ? 'Edit Task' : 'Add New Task',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+          ),
+          centerTitle: true,
+          actions: [
+            TextButton(
               onPressed: _save,
-              icon: const Icon(Icons.check_rounded),
-              label: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                child: Text(_isEditing ? 'Save changes' : 'Add task'),
+              child: const Text(
+                'Save',
+                style: TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
+            const SizedBox(width: 6),
           ],
+        ),
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+            children: [
+              const _FieldLabel('Task Title (Required)'),
+              const SizedBox(height: 7),
+              TextFormField(
+                controller: _titleController,
+                autofocus: !_isEditing,
+                textInputAction: TextInputAction.next,
+                decoration: _inputDecoration('Enter task title'),
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Please enter a task title'
+                    : null,
+              ),
+              const SizedBox(height: 18),
+              const _FieldLabel('Subject/Course'),
+              const SizedBox(height: 7),
+              DropdownButtonFormField<String>(
+                value: _course,
+                decoration: _inputDecoration('Select subject'),
+                items: _courses
+                    .map(
+                      (course) => DropdownMenuItem(
+                        value: course,
+                        child: Text(course),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) setState(() => _course = value);
+                },
+              ),
+              const SizedBox(height: 18),
+              const _FieldLabel('Description (Optional)'),
+              const SizedBox(height: 7),
+              TextFormField(
+                controller: _descriptionController,
+                minLines: 4,
+                maxLines: 6,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: _inputDecoration('Add notes or details'),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: _PickerButton(
+                      icon: Icons.calendar_today_rounded,
+                      label: _formatDate(_dueDate),
+                      onPressed: _pickDate,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _PickerButton(
+                      icon: Icons.schedule_rounded,
+                      label: _dueTime.format(context),
+                      onPressed: _pickTime,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const _FieldLabel('Priority'),
+              const SizedBox(height: 8),
+              _PrioritySelector(
+                selected: _priority,
+                onSelected: (priority) => setState(() => _priority = priority),
+              ),
+              const SizedBox(height: 20),
+              const _FieldLabel('Status'),
+              const SizedBox(height: 8),
+              _StatusSelector(
+                selected: _status,
+                onSelected: (status) => setState(() => _status = status),
+              ),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: _save,
+                icon: const Icon(Icons.check_rounded),
+                label: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Text(_isEditing ? 'Save changes' : 'Add task'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -234,8 +256,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       _dueTime.minute,
     );
 
-    Navigator.pop(
-      context,
+    _finishPop(
       StudyTask(
         title: _titleController.text.trim(),
         course: _course,
@@ -248,6 +269,59 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         completed: _status == TaskStatus.done,
       ),
     );
+  }
+
+  bool get _hasUnsavedChanges {
+    return _titleController.text != _initialTitle ||
+        _descriptionController.text != _initialDescription ||
+        _course != _initialCourse ||
+        !DateUtils.isSameDay(_dueDate, _initialDueDate) ||
+        _dueTime.hour != _initialDueTime.hour ||
+        _dueTime.minute != _initialDueTime.minute ||
+        _priority != _initialPriority ||
+        _status != _initialStatus;
+  }
+
+  Future<void> _requestClose() async {
+    if (_discardDialogOpen) return;
+    if (!_hasUnsavedChanges) {
+      _finishPop();
+      return;
+    }
+
+    _discardDialogOpen = true;
+    final shouldDiscard = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Discard unsaved changes?'),
+        content: const Text(
+          'Your changes have not been saved and will be lost.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep editing'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFFF5A65),
+            ),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    _discardDialogOpen = false;
+    if (shouldDiscard == true && mounted) _finishPop();
+  }
+
+  void _finishPop([StudyTask? result]) {
+    if (!mounted) return;
+    setState(() => _allowPop = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.pop(context, result);
+    });
   }
 
   String _formatDueLabel(DateTime due) {

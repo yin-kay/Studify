@@ -141,9 +141,7 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
             trailing: PopupMenuButton<String>(
               onSelected: (value) {
                 if (value == 'edit') _showCourseDialog(index: index);
-                if (value == 'delete') {
-                  setState(() => _courses.removeAt(index));
-                }
+                if (value == 'delete') _confirmDeleteCourse(index);
               },
               itemBuilder: (_) => const [
                 PopupMenuItem(value: 'edit', child: Text('Edit')),
@@ -164,6 +162,35 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
   Color _courseColor(int index) {
     const colors = [Color(0xFF5B5CE2), Color(0xFFFFB648), Color(0xFF45B98C)];
     return colors[index % colors.length];
+  }
+
+  Future<void> _confirmDeleteCourse(int index) async {
+    final course = _courses[index];
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete subject?'),
+        content: Text(
+          '“$course” will be permanently removed from your subjects.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFFF5A65),
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (shouldDelete == true && mounted) {
+      setState(() => _courses.remove(course));
+    }
   }
 
   Future<void> _showCourseDialog({int? index}) async {
