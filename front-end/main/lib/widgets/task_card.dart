@@ -31,6 +31,9 @@ class TaskCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
+        splashFactory: InkRipple.splashFactory,
+        splashColor: Theme.of(context).colorScheme.primary.withOpacity(.08),
+        highlightColor: Theme.of(context).colorScheme.primary.withOpacity(.04),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),

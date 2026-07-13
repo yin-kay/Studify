@@ -25,6 +25,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
+  late final PageController _pageController;
   final List<StudyTask> _tasks = [
     StudyTask(
       title: 'IT Assignment 1',
@@ -65,35 +66,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
       '${priority.name[0].toUpperCase()}${priority.name.substring(1)}';
 
   @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Scaffold(
       body: SafeArea(
-        child: IndexedStack(
-          index: _currentIndex,
-          children: [
-            _buildDashboard(),
-            TaskListScreen(
-              tasks: _tasks,
-              onTaskChanged: _setTaskCompleted,
-              onEditTask: _showTaskForm,
-              onOpenTask: _showTaskDetail,
-              onDeleteTask: _confirmDeleteTask,
-            ),
-            CalendarScreen(
-              tasks: _tasks,
-              onTaskChanged: _setTaskCompleted,
-              onEditTask: _showTaskForm,
-              onOpenTask: _showTaskDetail,
-              onDeleteTask: _confirmDeleteTask,
-            ),
-            SettingsScreen(
-              darkMode: widget.darkMode,
-              onDarkModeChanged: widget.onDarkModeChanged,
-            ),
-          ],
+        child: ClipRect(
+          child: PageView(
+            controller: _pageController,
+            physics: const NeverScrollableScrollPhysics(),
+            clipBehavior: Clip.hardEdge,
+            onPageChanged: (index) {
+              if (index != _currentIndex) {
+                setState(() => _currentIndex = index);
+              }
+            },
+            children: _buildPages(),
+          ),
         ),
       ),
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
       floatingActionButton: _currentIndex == 3
           ? null
           : FloatingActionButton(
@@ -108,7 +111,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
-        onDestinationSelected: (value) => setState(() => _currentIndex = value),
+        onDestinationSelected: _selectPage,
+        animationDuration: const Duration(milliseconds: 320),
         backgroundColor: colors.surface,
         indicatorColor: colors.primaryContainer,
         destinations: const [
@@ -137,6 +141,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  List<Widget> _buildPages() {
+    return [
+      _buildDashboard(),
+      TaskListScreen(
+        tasks: _tasks,
+        onTaskChanged: _setTaskCompleted,
+        onEditTask: _showTaskForm,
+        onOpenTask: _showTaskDetail,
+        onDeleteTask: _confirmDeleteTask,
+      ),
+      CalendarScreen(
+        tasks: _tasks,
+        onTaskChanged: _setTaskCompleted,
+        onEditTask: _showTaskForm,
+        onOpenTask: _showTaskDetail,
+        onDeleteTask: _confirmDeleteTask,
+      ),
+      SettingsScreen(
+        darkMode: widget.darkMode,
+        onDarkModeChanged: widget.onDarkModeChanged,
+      ),
+    ];
+  }
+
+  void _selectPage(int index) {
+    if (index == _currentIndex) return;
+    setState(() => _currentIndex = index);
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 360),
+      curve: Curves.easeInOutCubic,
+    );
+  }
+
   Widget _buildDashboard() {
     final colors = Theme.of(context).colorScheme;
     final completed = _tasks.where((task) => task.completed).length;
@@ -147,7 +185,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           sliver: SliverList.list(
             children: [
               Text(
-                'StudyFlow',
+                'Studify',
                 style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.w900,
@@ -178,32 +216,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
               const SizedBox(height: 18),
-              Row(
-                children: [
-                  Expanded(
-                    child: SummaryCard(
-                      value: '${_tasks.length}',
-                      label: 'Due\nToday',
-                      color: const Color(0xFF5B5CE2),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final gap = constraints.maxWidth < 360 ? 6.0 : 10.0;
+                  return IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: SummaryCard(
+                            value: '${_tasks.length}',
+                            label: 'Due\nToday',
+                            color: const Color(0xFF5B5CE2),
+                          ),
+                        ),
+                        SizedBox(width: gap),
+                        const Expanded(
+                          child: SummaryCard(
+                            value: '1',
+                            label: 'Overdue',
+                            color: Color(0xFFFF5A65),
+                          ),
+                        ),
+                        SizedBox(width: gap),
+                        Expanded(
+                          child: SummaryCard(
+                            value: '${5 + completed}',
+                            label: 'Done This\nWeek',
+                            color: const Color(0xFF45B98C),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: SummaryCard(
-                      value: '1',
-                      label: 'Overdue',
-                      color: Color(0xFFFF5A65),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: SummaryCard(
-                      value: '${5 + completed}',
-                      label: 'Done This\nWeek',
-                      color: const Color(0xFF45B98C),
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
               const SizedBox(height: 28),
               Row(

@@ -66,7 +66,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           sliver: SliverList.list(
             children: [
               Text(
-                'StudyFlow',
+                'Studify',
                 style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.w900,
@@ -277,7 +277,9 @@ class _CalendarGrid extends StatelessWidget {
         return InkWell(
           onTap: () => onDateSelected(date),
           borderRadius: BorderRadius.circular(10),
-          child: Container(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
             decoration: BoxDecoration(
               color: isSelected ? colors.primary : colors.surfaceContainerLow,
               borderRadius: BorderRadius.circular(10),
@@ -296,7 +298,7 @@ class _CalendarGrid extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: isSelected || isToday
                         ? FontWeight.w800
-                        : FontWeight.w500,
+                        : FontWeight.w600,
                     color: isSelected ? colors.onPrimary : colors.onSurface,
                   ),
                 ),

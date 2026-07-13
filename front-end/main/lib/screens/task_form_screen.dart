@@ -402,7 +402,7 @@ class _ChoiceButton extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 12,
-            fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
             color: selected ? color : colors.onSurfaceVariant,
           ),
         ),

@@ -15,7 +15,10 @@ class SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+      constraints: const BoxConstraints(minHeight: 112),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
       decoration: BoxDecoration(
         color: colors.surfaceContainerLow,
@@ -23,6 +26,7 @@ class SummaryCard extends StatelessWidget {
         border: Border.all(color: colors.outlineVariant),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
