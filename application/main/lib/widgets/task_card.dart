@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../models/study_task.dart';
+import '../providers/subject_provider.dart';
 
 class TaskCard extends StatelessWidget {
   const TaskCard({
@@ -25,6 +27,9 @@ class TaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final subjectName =
+        context.watch<SubjectProvider>().findById(task.subjectId)?.name ??
+            'None';
     return Material(
       color: colors.surfaceContainerLow,
       borderRadius: BorderRadius.circular(18),
@@ -68,7 +73,7 @@ class TaskCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          '${task.course}  \u2022  ${task.category}',
+                          '$subjectName  \u2022  ${task.category}',
                           style: TextStyle(
                             fontSize: 12,
                             color: colors.onSurfaceVariant,

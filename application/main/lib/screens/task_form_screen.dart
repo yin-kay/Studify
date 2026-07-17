@@ -17,14 +17,14 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
-  late String _course;
+  String? _subjectId;
   late DateTime _dueDate;
   late TimeOfDay _dueTime;
   late TaskPriority _priority;
   late TaskStatus _status;
   late final String _initialTitle;
   late final String _initialDescription;
-  late final String _initialCourse;
+  String? _initialSubjectId;
   late final DateTime _initialDueDate;
   late final TimeOfDay _initialDueTime;
   late final TaskPriority _initialPriority;
@@ -42,7 +42,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     _descriptionController = TextEditingController(
       text: task?.description ?? '',
     );
-    _course = task?.course ?? 'General';
+    _subjectId = task?.subjectId;
     _dueDate = DateUtils.dateOnly(task?.dueDate ?? DateTime.now());
     _dueTime = task == null
         ? const TimeOfDay(hour: 23, minute: 59)
@@ -51,11 +51,25 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     _status = task?.status ?? TaskStatus.toDo;
     _initialTitle = _titleController.text;
     _initialDescription = _descriptionController.text;
-    _initialCourse = _course;
+    _initialSubjectId = _subjectId;
     _initialDueDate = _dueDate;
     _initialDueTime = _dueTime;
     _initialPriority = _priority;
     _initialStatus = _status;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final subjects = context.read<SubjectProvider>().subjects;
+    final current = _subjectId;
+    if (current != null && !subjects.any((subject) => subject.id == current)) {
+      final legacyMatch = subjects.where(
+        (subject) => subject.name.toLowerCase() == current.toLowerCase(),
+      );
+      _subjectId = legacyMatch.isEmpty ? null : legacyMatch.first.id;
+      _initialSubjectId = _subjectId;
+    }
   }
 
   @override
@@ -68,11 +82,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final managedCourses = context
-        .watch<SubjectProvider>()
-        .subjects
-        .map((subject) => subject.name);
-    final courses = <String>{'General', _course, ...managedCourses}.toList();
+    final subjects = context.watch<SubjectProvider>().subjects;
     return PopScope<StudyTask>(
       canPop: _allowPop,
       onPopInvokedWithResult: (didPop, result) {
@@ -124,18 +134,18 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               const _FieldLabel('Subject/Course'),
               const SizedBox(height: 7),
               DropdownButtonFormField<String>(
-                value: _course,
+                initialValue: _subjectId,
                 decoration: _inputDecoration('Select subject'),
-                items: courses
+                items: subjects
                     .map(
-                      (course) => DropdownMenuItem(
-                        value: course,
-                        child: Text(course),
+                      (subject) => DropdownMenuItem(
+                        value: subject.id,
+                        child: Text(subject.name),
                       ),
                     )
                     .toList(),
                 onChanged: (value) {
-                  if (value != null) setState(() => _course = value);
+                  setState(() => _subjectId = value);
                 },
               ),
               const SizedBox(height: 18),
@@ -224,10 +234,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   }
 
   Future<void> _pickTime() async {
-    final time = await showTimePicker(
-      context: context,
-      initialTime: _dueTime,
-    );
+    final time = await showTimePicker(context: context, initialTime: _dueTime);
     if (time != null) setState(() => _dueTime = time);
   }
 
@@ -264,7 +271,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               StudyTask(title: _titleController.text, dueDateTime: dueDateTime))
           .copyWith(
         title: _titleController.text.trim(),
-        subjectId: _course,
+        subjectId: _subjectId,
+        clearSubject: _subjectId == null,
         dueLabel: _formatDueLabel(dueDateTime),
         category: widget.task?.category ?? 'Assignment',
         priority: _priority,
@@ -279,7 +287,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   bool get _hasUnsavedChanges {
     return _titleController.text != _initialTitle ||
         _descriptionController.text != _initialDescription ||
-        _course != _initialCourse ||
+        _subjectId != _initialSubjectId ||
         !DateUtils.isSameDay(_dueDate, _initialDueDate) ||
         _dueTime.hour != _initialDueTime.hour ||
         _dueTime.minute != _initialDueTime.minute ||
@@ -472,9 +480,7 @@ class _ChoiceButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
         decoration: BoxDecoration(
           color: selected ? color.withOpacity(.14) : colors.surfaceContainerLow,
-          border: Border.all(
-            color: selected ? color : colors.outlineVariant,
-          ),
+          border: Border.all(color: selected ? color : colors.outlineVariant),
         ),
         child: Text(
           label,

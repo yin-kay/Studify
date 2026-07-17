@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../models/study_task.dart';
+import '../providers/subject_provider.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   const TaskDetailScreen({
@@ -41,6 +43,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final subjectName =
+        context.watch<SubjectProvider>().findById(_task.subjectId)?.name ??
+            'None';
     return Scaffold(
       backgroundColor: colors.surface,
       appBar: AppBar(
@@ -98,7 +103,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     runSpacing: 8,
                     children: [
                       _Badge(
-                        label: _task.course,
+                        label: subjectName,
                         color: const Color(0xFF5B5CE2),
                       ),
                       _Badge(label: _priorityLabel, color: _priorityColor),
