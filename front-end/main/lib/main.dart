@@ -1,163 +1,96 @@
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
+import 'providers/subject_provider.dart';
+import 'providers/task_provider.dart';
+import 'providers/theme_provider.dart';
+import 'repositories/subject_repository.dart';
+import 'repositories/task_repository.dart';
 import 'screens/dashboard_screen.dart';
+import 'services/hive_service.dart';
+import 'services/subject_service.dart';
+import 'services/task_service.dart';
 
-void main() => runApp(const StudifyApp());
-
-class StudifyApp extends StatefulWidget {
-  const StudifyApp({super.key});
-
-  @override
-  State<StudifyApp> createState() => _StudifyAppState();
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final hive = HiveService();
+  await hive.initialize();
+  final taskRepository = TaskRepository(TaskService(hive));
+  final taskProvider = TaskProvider(taskRepository);
+  final subjectProvider = SubjectProvider(
+    SubjectRepository(SubjectService(hive), TaskService(hive)),
+    onSubjectsChanged: taskProvider.loadTasks,
+  );
+  final themeProvider = ThemeProvider(hive);
+  await Future.wait([
+    taskProvider.loadTasks(),
+    subjectProvider.loadSubjects(),
+    themeProvider.load()
+  ]);
+  runApp(MultiProvider(providers: [
+    ChangeNotifierProvider.value(value: taskProvider),
+    ChangeNotifierProvider.value(value: subjectProvider),
+    ChangeNotifierProvider.value(value: themeProvider),
+  ], child: const StudifyApp()));
 }
 
-class _StudifyAppState extends State<StudifyApp> {
-  bool _darkMode = false;
-
+class StudifyApp extends StatelessWidget {
+  const StudifyApp({super.key});
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Studify',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF5B5CE2),
-          brightness: Brightness.light,
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF7F7FC),
-        fontFamily: 'Arial',
-        textTheme: _buildTextTheme(Brightness.light),
-        useMaterial3: true,
-        splashFactory: NoSplash.splashFactory,
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        filledButtonTheme: _filledButtonTheme,
-        outlinedButtonTheme: _outlinedButtonTheme,
-        textButtonTheme: _textButtonTheme,
-        iconButtonTheme: _iconButtonTheme,
-        pageTransitionsTheme: _smoothPageTransitions,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF8B8CFF),
-          brightness: Brightness.dark,
-        ),
-        scaffoldBackgroundColor: const Color(0xFF15151F),
-        fontFamily: 'Arial',
-        textTheme: _buildTextTheme(Brightness.dark),
-        useMaterial3: true,
-        splashFactory: NoSplash.splashFactory,
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        filledButtonTheme: _filledButtonTheme,
-        outlinedButtonTheme: _outlinedButtonTheme,
-        textButtonTheme: _textButtonTheme,
-        iconButtonTheme: _iconButtonTheme,
-        pageTransitionsTheme: _smoothPageTransitions,
-      ),
-      themeMode: _darkMode ? ThemeMode.dark : ThemeMode.light,
+      theme: _theme(Brightness.light),
+      darkTheme: _theme(Brightness.dark),
+      themeMode: theme.themeMode,
       themeAnimationDuration: const Duration(milliseconds: 350),
-      themeAnimationCurve: Curves.easeInOutCubic,
       home: DashboardScreen(
-        darkMode: _darkMode,
-        onDarkModeChanged: (value) => setState(() => _darkMode = value),
-      ),
+          darkMode: theme.isDark, onDarkModeChanged: theme.setDarkMode),
     );
   }
 
-  static const _smoothPageTransitions = PageTransitionsTheme(
-    builders: {
-      TargetPlatform.android: _SmoothPageTransitionsBuilder(),
-      TargetPlatform.iOS: _SmoothPageTransitionsBuilder(),
-      TargetPlatform.windows: _SmoothPageTransitionsBuilder(),
-      TargetPlatform.macOS: _SmoothPageTransitionsBuilder(),
-      TargetPlatform.linux: _SmoothPageTransitionsBuilder(),
-    },
-  );
-
-  static TextTheme _buildTextTheme(Brightness brightness) {
-    final base = ThemeData(
-      brightness: brightness,
-      useMaterial3: true,
-    ).textTheme.apply(fontFamily: 'Arial');
-
-    TextStyle? withWeight(TextStyle? style, FontWeight weight) =>
-        style?.copyWith(fontWeight: weight);
-
-    return base.copyWith(
-      displayLarge: withWeight(base.displayLarge, FontWeight.w800),
-      displayMedium: withWeight(base.displayMedium, FontWeight.w800),
-      displaySmall: withWeight(base.displaySmall, FontWeight.w800),
-      headlineLarge: withWeight(base.headlineLarge, FontWeight.w800),
-      headlineMedium: withWeight(base.headlineMedium, FontWeight.w800),
-      headlineSmall: withWeight(base.headlineSmall, FontWeight.w800),
-      titleLarge: withWeight(base.titleLarge, FontWeight.w800),
-      titleMedium: withWeight(base.titleMedium, FontWeight.w700),
-      titleSmall: withWeight(base.titleSmall, FontWeight.w700),
-      bodyLarge: withWeight(base.bodyLarge, FontWeight.w600),
-      bodyMedium: withWeight(base.bodyMedium, FontWeight.w600),
-      bodySmall: withWeight(base.bodySmall, FontWeight.w600),
-      labelLarge: withWeight(base.labelLarge, FontWeight.w700),
-      labelMedium: withWeight(base.labelMedium, FontWeight.w700),
-      labelSmall: withWeight(base.labelSmall, FontWeight.w700),
-    );
-  }
-
-  static final _filledButtonTheme = FilledButtonThemeData(
-    style: ButtonStyle(
-      animationDuration: const Duration(milliseconds: 180),
-      overlayColor: WidgetStateProperty.resolveWith(
-        (states) => states.contains(WidgetState.pressed)
-            ? Colors.white.withOpacity(.14)
-            : null,
-      ),
-    ),
-  );
-
-  static const _outlinedButtonTheme = OutlinedButtonThemeData(
-    style: ButtonStyle(
-      animationDuration: Duration(milliseconds: 180),
-    ),
-  );
-
-  static const _textButtonTheme = TextButtonThemeData(
-    style: ButtonStyle(
-      animationDuration: Duration(milliseconds: 180),
-    ),
-  );
-
-  static const _iconButtonTheme = IconButtonThemeData(
-    style: ButtonStyle(
-      animationDuration: Duration(milliseconds: 180),
-    ),
-  );
+  ThemeData _theme(Brightness brightness) => ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: brightness == Brightness.light
+                ? const Color(0xFF5B5CE2)
+                : const Color(0xFF8B8CFF),
+            brightness: brightness),
+        scaffoldBackgroundColor: brightness == Brightness.light
+            ? const Color(0xFFF7F7FC)
+            : const Color(0xFF15151F),
+        fontFamily: 'Arial',
+        useMaterial3: true,
+        splashFactory: NoSplash.splashFactory,
+        pageTransitionsTheme: const PageTransitionsTheme(builders: {
+          TargetPlatform.android: _SmoothPageTransitionsBuilder(),
+          TargetPlatform.iOS: _SmoothPageTransitionsBuilder(),
+          TargetPlatform.windows: _SmoothPageTransitionsBuilder(),
+          TargetPlatform.macOS: _SmoothPageTransitionsBuilder(),
+          TargetPlatform.linux: _SmoothPageTransitionsBuilder(),
+        }),
+      );
 }
 
 class _SmoothPageTransitionsBuilder extends PageTransitionsBuilder {
   const _SmoothPageTransitionsBuilder();
-
   @override
   Widget buildTransitions<T>(
-    PageRoute<T> route,
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-  ) {
-    final curvedAnimation = CurvedAnimation(
-      parent: animation,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    );
+      PageRoute<T> route,
+      BuildContext context,
+      Animation<double> animation,
+      Animation<double> secondaryAnimation,
+      Widget child) {
+    final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic);
     return FadeTransition(
-      opacity: curvedAnimation,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0.025, 0.015),
-          end: Offset.zero,
-        ).animate(curvedAnimation),
-        child: child,
-      ),
-    );
+        opacity: curved,
+        child: SlideTransition(
+            position:
+                Tween<Offset>(begin: const Offset(.025, .015), end: Offset.zero)
+                    .animate(curved),
+            child: child));
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../models/study_task.dart';
+import '../providers/subject_provider.dart';
 
 class TaskFormScreen extends StatefulWidget {
   const TaskFormScreen({this.task, super.key});
@@ -30,8 +32,6 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   bool _allowPop = false;
   bool _discardDialogOpen = false;
 
-  static const _courses = ['CSC2074', 'MAT2032', 'General'];
-
   bool get _isEditing => widget.task != null;
 
   @override
@@ -42,9 +42,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     _descriptionController = TextEditingController(
       text: task?.description ?? '',
     );
-    _course = task == null || !_courses.contains(task.course)
-        ? 'General'
-        : task.course;
+    _course = task?.course ?? 'General';
     _dueDate = DateUtils.dateOnly(task?.dueDate ?? DateTime.now());
     _dueTime = task == null
         ? const TimeOfDay(hour: 23, minute: 59)
@@ -70,6 +68,11 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final managedCourses = context
+        .watch<SubjectProvider>()
+        .subjects
+        .map((subject) => subject.name);
+    final courses = <String>{'General', _course, ...managedCourses}.toList();
     return PopScope<StudyTask>(
       canPop: _allowPop,
       onPopInvokedWithResult: (didPop, result) {
@@ -123,7 +126,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               DropdownButtonFormField<String>(
                 value: _course,
                 decoration: _inputDecoration('Select subject'),
-                items: _courses
+                items: courses
                     .map(
                       (course) => DropdownMenuItem(
                         value: course,
@@ -257,13 +260,15 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     );
 
     _finishPop(
-      StudyTask(
+      (widget.task ??
+              StudyTask(title: _titleController.text, dueDateTime: dueDateTime))
+          .copyWith(
         title: _titleController.text.trim(),
-        course: _course,
-        due: _formatDueLabel(dueDateTime),
+        subjectId: _course,
+        dueLabel: _formatDueLabel(dueDateTime),
         category: widget.task?.category ?? 'Assignment',
         priority: _priority,
-        dueDate: dueDateTime,
+        dueDateTime: dueDateTime,
         description: _descriptionController.text.trim(),
         status: _status,
         completed: _status == TaskStatus.done,

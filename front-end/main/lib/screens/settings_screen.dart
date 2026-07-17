@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/subject.dart';
+import '../providers/subject_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({
@@ -113,10 +116,9 @@ class CourseManagementScreen extends StatefulWidget {
 }
 
 class _CourseManagementScreenState extends State<CourseManagementScreen> {
-  final List<String> _courses = ['CSC2074', 'MAT2032', 'General'];
-
   @override
   Widget build(BuildContext context) {
+    final subjects = context.watch<SubjectProvider>().subjects;
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -126,7 +128,7 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
       ),
       body: ListView.separated(
         padding: const EdgeInsets.all(20),
-        itemCount: _courses.length,
+        itemCount: subjects.length,
         separatorBuilder: (context, index) => const SizedBox(height: 10),
         itemBuilder: (context, index) => Card(
           child: ListTile(
@@ -135,13 +137,14 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
               child: Icon(Icons.book_rounded, color: _courseColor(index)),
             ),
             title: Text(
-              _courses[index],
+              subjects[index].name,
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
             trailing: PopupMenuButton<String>(
               onSelected: (value) {
-                if (value == 'edit') _showCourseDialog(index: index);
-                if (value == 'delete') _confirmDeleteCourse(index);
+                if (value == 'edit')
+                  _showCourseDialog(subject: subjects[index]);
+                if (value == 'delete') _confirmDeleteCourse(subjects[index]);
               },
               itemBuilder: (_) => const [
                 PopupMenuItem(value: 'edit', child: Text('Edit')),
@@ -164,14 +167,13 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
     return colors[index % colors.length];
   }
 
-  Future<void> _confirmDeleteCourse(int index) async {
-    final course = _courses[index];
+  Future<void> _confirmDeleteCourse(Subject subject) async {
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Delete subject?'),
         content: Text(
-          '“$course” will be permanently removed from your subjects.',
+          '“${subject.name}” will be removed. Existing tasks will be kept.',
         ),
         actions: [
           TextButton(
@@ -189,18 +191,23 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
       ),
     );
     if (shouldDelete == true && mounted) {
-      setState(() => _courses.remove(course));
+      final provider = context.read<SubjectProvider>();
+      final success = await provider.deleteSubject(subject.id);
+      if (!success && mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content:
+                Text(provider.errorMessage ?? 'Could not delete subject.')));
     }
   }
 
-  Future<void> _showCourseDialog({int? index}) async {
+  Future<void> _showCourseDialog({Subject? subject}) async {
     final controller = TextEditingController(
-      text: index == null ? '' : _courses[index],
+      text: subject?.name ?? '',
     );
     final value = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(index == null ? 'Add subject' : 'Edit subject'),
+        title: Text(subject == null ? 'Add subject' : 'Edit subject'),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -227,13 +234,15 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
     );
     controller.dispose();
     if (value == null || !mounted) return;
-    setState(() {
-      if (index == null) {
-        _courses.add(value);
-      } else {
-        _courses[index] = value;
-      }
-    });
+    final provider = context.read<SubjectProvider>();
+    final success = subject == null
+        ? await provider.addSubject(
+            name: value,
+            colorValue: _courseColor(provider.subjects.length).value)
+        : await provider.updateSubject(subject.copyWith(name: value));
+    if (!success && mounted)
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(provider.errorMessage ?? 'Could not save subject.')));
   }
 }
 

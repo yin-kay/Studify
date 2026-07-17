@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../models/study_task.dart';
+import '../providers/task_provider.dart';
 import '../widgets/summary_card.dart';
 import '../widgets/task_card.dart';
 import 'calendar_screen.dart';
@@ -26,7 +28,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
   late final PageController _pageController;
-  late final List<StudyTask> _tasks;
+  List<StudyTask> get _tasks => context.read<TaskProvider>().tasks;
 
   Color _priorityColor(TaskPriority priority) => switch (priority) {
         TaskPriority.high => const Color(0xFFFF5A65),
@@ -41,46 +43,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _pageController = PageController();
-    _tasks = _buildInitialTasks();
-  }
-
-  List<StudyTask> _buildInitialTasks() {
-    final today = DateUtils.dateOnly(DateTime.now());
-
-    DateTime atTime(int daysFromToday, int hour, int minute) {
-      final date = today.add(Duration(days: daysFromToday));
-      return DateTime(date.year, date.month, date.day, hour, minute);
-    }
-
-    return [
-      StudyTask(
-        title: 'IT Assignment 1',
-        course: 'CSC2074',
-        due: 'Today, 4:00 PM',
-        category: 'Assignment',
-        priority: TaskPriority.high,
-        dueDate: atTime(0, 16, 0),
-      ),
-      StudyTask(
-        title: 'Database Setup',
-        course: 'CSC2074',
-        due: 'Today, 11:59 PM',
-        category: 'Project',
-        priority: TaskPriority.medium,
-        dueDate: atTime(0, 23, 59),
-        status: TaskStatus.inProgress,
-      ),
-      StudyTask(
-        title: 'Review Chapter 5',
-        course: 'MAT2032',
-        due: 'Tomorrow, 10:00 AM',
-        category: 'Study',
-        priority: TaskPriority.low,
-        dueDate: atTime(1, 10, 0),
-        status: TaskStatus.done,
-        completed: true,
-      ),
-    ];
   }
 
   @override
@@ -91,6 +53,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<TaskProvider>();
     final colors = Theme.of(context).colorScheme;
     return Scaffold(
       body: SafeArea(
@@ -189,7 +152,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildDashboard() {
     final colors = Theme.of(context).colorScheme;
-    final completed = _tasks.where((task) => task.completed).length;
+    final provider = context.read<TaskProvider>();
     return CustomScrollView(
       slivers: [
         SliverPadding(
@@ -237,15 +200,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         Expanded(
                           child: SummaryCard(
-                            value: '${_tasks.length}',
+                            value: '${provider.dueTodayCount}',
                             label: 'Due\nToday',
                             color: const Color(0xFF5B5CE2),
                           ),
                         ),
                         SizedBox(width: gap),
-                        const Expanded(
+                        Expanded(
                           child: SummaryCard(
-                            value: '1',
+                            value: '${provider.overdueCount}',
                             label: 'Overdue',
                             color: Color(0xFFFF5A65),
                           ),
@@ -253,7 +216,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         SizedBox(width: gap),
                         Expanded(
                           child: SummaryCard(
-                            value: '${5 + completed}',
+                            value: '${provider.completedThisWeekCount}',
                             label: 'Done This\nWeek',
                             color: const Color(0xFF45B98C),
                           ),
@@ -337,15 +300,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
     if (savedTask == null || !mounted) return null;
 
-    setState(() {
-      if (existingTask == null) {
-        _tasks.add(savedTask);
-      } else {
-        final index = _tasks.indexOf(existingTask);
-        if (index != -1) _tasks[index] = savedTask;
-      }
-    });
-    return savedTask;
+    final provider = context.read<TaskProvider>();
+    final success = existingTask == null
+        ? await provider.addTask(
+            title: savedTask.title,
+            subjectId: savedTask.subjectId,
+            description: savedTask.description,
+            dueDateTime: savedTask.dueDateTime,
+            priority: savedTask.priority,
+            status: savedTask.status,
+            category: savedTask.category)
+        : await provider.updateTask(savedTask);
+    if (!success || !mounted) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(provider.errorMessage ?? 'Could not save task.')));
+      return null;
+    }
+    return existingTask == null
+        ? provider.tasks.last
+        : provider.tasks.firstWhere((t) => t.id == savedTask.id);
   }
 
   Future<void> _showTaskDetail(StudyTask task) async {
@@ -363,7 +337,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _deleteTask(StudyTask task) {
-    setState(() => _tasks.remove(task));
+    context.read<TaskProvider>().deleteTask(task.id);
   }
 
   Future<void> _confirmDeleteTask(StudyTask task) async {
@@ -391,9 +365,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _setTaskCompleted(StudyTask task, bool completed) {
-    setState(() {
-      task.completed = completed;
-      task.status = completed ? TaskStatus.done : TaskStatus.toDo;
-    });
+    context
+        .read<TaskProvider>()
+        .updateStatus(task.id, completed ? TaskStatus.done : TaskStatus.toDo);
   }
 }
