@@ -38,8 +38,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
     indexedTasks.sort((first, second) {
       final comparison = switch (_sortOption) {
-        _TaskSortOption.dueDate =>
-          first.$2.dueDate.compareTo(second.$2.dueDate),
+        _TaskSortOption.dueDate => first.$2.dueDate.millisecondsSinceEpoch
+            .compareTo(second.$2.dueDate.millisecondsSinceEpoch),
         _TaskSortOption.priority =>
           first.$2.priority.index.compareTo(second.$2.priority.index),
       };

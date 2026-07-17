@@ -26,35 +26,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
   late final PageController _pageController;
-  final List<StudyTask> _tasks = [
-    StudyTask(
-      title: 'IT Assignment 1',
-      course: 'CSC2074',
-      due: 'Today, 4:00 PM',
-      category: 'Assignment',
-      priority: TaskPriority.high,
-      dueDate: DateTime.now(),
-    ),
-    StudyTask(
-      title: 'Database Setup',
-      course: 'CSC2074',
-      due: 'Today, 11:59 PM',
-      category: 'Project',
-      priority: TaskPriority.medium,
-      dueDate: DateTime.now(),
-      status: TaskStatus.inProgress,
-    ),
-    StudyTask(
-      title: 'Review Chapter 5',
-      course: 'MAT2032',
-      due: 'Tomorrow, 10:00 AM',
-      category: 'Study',
-      priority: TaskPriority.low,
-      dueDate: DateTime.now().add(const Duration(days: 1)),
-      status: TaskStatus.done,
-      completed: true,
-    ),
-  ];
+  late final List<StudyTask> _tasks;
 
   Color _priorityColor(TaskPriority priority) => switch (priority) {
         TaskPriority.high => const Color(0xFFFF5A65),
@@ -69,6 +41,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _pageController = PageController();
+    _tasks = _buildInitialTasks();
+  }
+
+  List<StudyTask> _buildInitialTasks() {
+    final today = DateUtils.dateOnly(DateTime.now());
+
+    DateTime atTime(int daysFromToday, int hour, int minute) {
+      final date = today.add(Duration(days: daysFromToday));
+      return DateTime(date.year, date.month, date.day, hour, minute);
+    }
+
+    return [
+      StudyTask(
+        title: 'IT Assignment 1',
+        course: 'CSC2074',
+        due: 'Today, 4:00 PM',
+        category: 'Assignment',
+        priority: TaskPriority.high,
+        dueDate: atTime(0, 16, 0),
+      ),
+      StudyTask(
+        title: 'Database Setup',
+        course: 'CSC2074',
+        due: 'Today, 11:59 PM',
+        category: 'Project',
+        priority: TaskPriority.medium,
+        dueDate: atTime(0, 23, 59),
+        status: TaskStatus.inProgress,
+      ),
+      StudyTask(
+        title: 'Review Chapter 5',
+        course: 'MAT2032',
+        due: 'Tomorrow, 10:00 AM',
+        category: 'Study',
+        priority: TaskPriority.low,
+        dueDate: atTime(1, 10, 0),
+        status: TaskStatus.done,
+        completed: true,
+      ),
+    ];
   }
 
   @override
