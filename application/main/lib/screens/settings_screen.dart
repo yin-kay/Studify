@@ -273,12 +273,12 @@ class _SettingsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return Material(
-      color: colors.surfaceContainerLow,
+    return Container(
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colors.outlineVariant),
+        border: Border.all(color: colors.outlineVariant),
       ),
       child: child,
     );
