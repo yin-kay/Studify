@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/study_task.dart';
 import '../widgets/task_card.dart';
 
+enum _TaskSortOption { dueDate, priority }
+
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({
     required this.tasks,
@@ -25,10 +27,29 @@ class TaskListScreen extends StatefulWidget {
 
 class _TaskListScreenState extends State<TaskListScreen> {
   TaskStatus _selectedStatus = TaskStatus.toDo;
+  _TaskSortOption _sortOption = _TaskSortOption.dueDate;
 
-  List<StudyTask> get _filteredTasks => widget.tasks
-      .where((task) => task.status == _selectedStatus)
-      .toList(growable: false);
+  List<StudyTask> get _filteredTasks {
+    final indexedTasks = widget.tasks
+        .where((task) => task.status == _selectedStatus)
+        .toList(growable: false)
+        .indexed
+        .toList();
+
+    indexedTasks.sort((first, second) {
+      final comparison = switch (_sortOption) {
+        _TaskSortOption.dueDate =>
+          first.$2.dueDate.compareTo(second.$2.dueDate),
+        _TaskSortOption.priority =>
+          first.$2.priority.index.compareTo(second.$2.priority.index),
+      };
+
+      // Keep the original order when two tasks have the same sort value.
+      return comparison != 0 ? comparison : first.$1.compareTo(second.$1);
+    });
+
+    return indexedTasks.map((entry) => entry.$2).toList(growable: false);
+  }
 
   Color _priorityColor(TaskPriority priority) => switch (priority) {
         TaskPriority.high => const Color(0xFFFF5A65),
@@ -70,6 +91,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
                 onSelected: (status) =>
                     setState(() => _selectedStatus = status),
               ),
+              const SizedBox(height: 12),
+              _SortDropdown(
+                value: _sortOption,
+                onChanged: (option) => setState(() => _sortOption = option),
+              ),
               const SizedBox(height: 16),
             ],
           ),
@@ -100,6 +126,66 @@ class _TaskListScreenState extends State<TaskListScreen> {
               },
             ),
           ),
+      ],
+    );
+  }
+}
+
+class _SortDropdown extends StatelessWidget {
+  const _SortDropdown({required this.value, required this.onChanged});
+
+  final _TaskSortOption value;
+  final ValueChanged<_TaskSortOption> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Text(
+          'Sort by',
+          style: TextStyle(
+            color: colors.onSurfaceVariant,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: colors.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<_TaskSortOption>(
+              key: const ValueKey('task-sort-dropdown'),
+              value: value,
+              borderRadius: BorderRadius.circular(12),
+              icon: const Icon(Icons.keyboard_arrow_down_rounded),
+              style: TextStyle(
+                color: colors.onSurface,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+              onChanged: (option) {
+                if (option != null) onChanged(option);
+              },
+              items: const [
+                DropdownMenuItem(
+                  value: _TaskSortOption.dueDate,
+                  child: Text('Due Date'),
+                ),
+                DropdownMenuItem(
+                  value: _TaskSortOption.priority,
+                  child: Text('Priority'),
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
