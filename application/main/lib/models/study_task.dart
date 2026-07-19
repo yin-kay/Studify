@@ -111,9 +111,9 @@ class StudyTaskAdapter extends TypeAdapter<StudyTask> {
 
   @override
   StudyTask read(BinaryReader reader) {
+    final fieldCount = reader.readByte();
     final fields = <int, dynamic>{
-      for (var i = 0; i < reader.readByte(); i++)
-        reader.readByte(): reader.read(),
+      for (var i = 0; i < fieldCount; i++) reader.readByte(): reader.read(),
     };
     final epoch = DateTime.fromMillisecondsSinceEpoch(0);
     final createdAt = _date(fields[7]) ?? epoch;

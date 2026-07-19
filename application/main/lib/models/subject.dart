@@ -1,6 +1,8 @@
 import 'package:hive/hive.dart';
 
 class Subject {
+  static const String recoveredId = '__recovered_subject__';
+
   const Subject(
       {required this.id,
       required this.name,
@@ -43,16 +45,24 @@ class SubjectAdapter extends TypeAdapter<Subject> {
   final int typeId = 1;
   @override
   Subject read(BinaryReader reader) {
+    final fieldCount = reader.readByte();
     final fields = <int, dynamic>{
-      for (var i = 0; i < reader.readByte(); i++)
-        reader.readByte(): reader.read()
+      for (var i = 0; i < fieldCount; i++) reader.readByte(): reader.read()
     };
+    final epoch = DateTime.fromMillisecondsSinceEpoch(0);
+    final createdAt = fields[3] is DateTime ? fields[3] as DateTime : epoch;
     return Subject(
-        id: fields[0] as String,
-        name: fields[1] as String,
-        colorValue: fields[2] as int,
-        createdAt: fields[3] as DateTime,
-        updatedAt: fields[4] as DateTime);
+      id: _nonEmptyString(fields[0]) ?? Subject.recoveredId,
+      name: _nonEmptyString(fields[1]) ?? 'Recovered subject',
+      colorValue: fields[2] is int ? fields[2] as int : 0xFF5B5CE2,
+      createdAt: createdAt,
+      updatedAt: fields[4] is DateTime ? fields[4] as DateTime : createdAt,
+    );
+  }
+
+  String? _nonEmptyString(Object? value) {
+    final string = value is String ? value.trim() : null;
+    return string == null || string.isEmpty ? null : string;
   }
 
   @override

@@ -364,9 +364,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (shouldDelete == true && mounted) _deleteTask(task);
   }
 
-  void _setTaskCompleted(StudyTask task, bool completed) {
-    context
-        .read<TaskProvider>()
-        .updateStatus(task.id, completed ? TaskStatus.done : TaskStatus.toDo);
+  Future<StudyTask?> _setTaskCompleted(StudyTask task, bool completed) async {
+    final provider = context.read<TaskProvider>();
+    final success = await provider.updateStatus(
+        task.id, completed ? TaskStatus.done : TaskStatus.toDo);
+    if (!success || !mounted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                provider.errorMessage ?? 'Could not update task status.')));
+      }
+      return null;
+    }
+    return provider.tasks.firstWhere((item) => item.id == task.id);
   }
 }

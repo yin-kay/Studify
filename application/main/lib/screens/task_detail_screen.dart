@@ -16,7 +16,8 @@ class TaskDetailScreen extends StatefulWidget {
   final StudyTask task;
   final Future<StudyTask?> Function(StudyTask task) onEdit;
   final ValueChanged<StudyTask> onDelete;
-  final void Function(StudyTask task, bool completed) onCompletedChanged;
+  final Future<StudyTask?> Function(StudyTask task, bool completed)
+      onCompletedChanged;
 
   @override
   State<TaskDetailScreen> createState() => _TaskDetailScreenState();
@@ -177,10 +178,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     if (savedTask != null && mounted) setState(() => _task = savedTask);
   }
 
-  void _toggleCompleted() {
+  Future<void> _toggleCompleted() async {
     final completed = !_task.completed;
-    widget.onCompletedChanged(_task, completed);
-    setState(() {});
+    final savedTask = await widget.onCompletedChanged(_task, completed);
+    if (savedTask != null && mounted) setState(() => _task = savedTask);
   }
 
   Future<void> _confirmDelete() async {
