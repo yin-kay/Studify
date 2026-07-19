@@ -5,6 +5,8 @@ enum TaskPriority { high, medium, low }
 enum TaskStatus { toDo, inProgress, done }
 
 class StudyTask {
+  static const String recoveredId = '__recovered_task__';
+
   StudyTask({
     String? id,
     required String title,
@@ -113,19 +115,21 @@ class StudyTaskAdapter extends TypeAdapter<StudyTask> {
       for (var i = 0; i < reader.readByte(); i++)
         reader.readByte(): reader.read(),
     };
+    final epoch = DateTime.fromMillisecondsSinceEpoch(0);
+    final createdAt = _date(fields[7]) ?? epoch;
     return StudyTask(
-      id: fields[0] as String,
-      title: fields[1] as String,
-      subjectId: fields[2] as String?,
-      description: fields[3] as String? ?? '',
-      dueDateTime: fields[4] as DateTime,
-      priority: _priorityFrom(fields[5] as String?),
-      status: _statusFrom(fields[6] as String?),
-      createdAt: fields[7] as DateTime,
-      updatedAt: fields[8] as DateTime,
-      completedAt: fields[9] as DateTime?,
-      category: fields[10] as String? ?? '',
-      due: fields[11] as String? ?? '',
+      id: _nonEmptyString(fields[0]) ?? StudyTask.recoveredId,
+      title: _nonEmptyString(fields[1]) ?? 'Untitled task',
+      subjectId: _nonEmptyString(fields[2]),
+      description: _string(fields[3]) ?? '',
+      dueDateTime: _date(fields[4]) ?? epoch,
+      priority: _priorityFrom(fields[5]),
+      status: _statusFrom(fields[6]),
+      createdAt: createdAt,
+      updatedAt: _date(fields[8]) ?? createdAt,
+      completedAt: _date(fields[9]),
+      category: _string(fields[10]) ?? '',
+      due: _string(fields[11]) ?? '',
     );
   }
 
@@ -159,9 +163,18 @@ class StudyTaskAdapter extends TypeAdapter<StudyTask> {
       ..write(task.dueLabel);
   }
 
-  TaskPriority _priorityFrom(String? value) =>
+  String? _string(Object? value) => value is String ? value : null;
+
+  String? _nonEmptyString(Object? value) {
+    final string = _string(value)?.trim();
+    return string == null || string.isEmpty ? null : string;
+  }
+
+  DateTime? _date(Object? value) => value is DateTime ? value : null;
+
+  TaskPriority _priorityFrom(Object? value) =>
       TaskPriority.values.firstWhere((item) => item.name == value,
           orElse: () => TaskPriority.medium);
-  TaskStatus _statusFrom(String? value) => TaskStatus.values
+  TaskStatus _statusFrom(Object? value) => TaskStatus.values
       .firstWhere((item) => item.name == value, orElse: () => TaskStatus.toDo);
 }
