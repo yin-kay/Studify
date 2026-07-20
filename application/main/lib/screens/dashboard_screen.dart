@@ -210,7 +210,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           child: SummaryCard(
                             value: '${provider.overdueCount}',
                             label: 'Overdue',
-                            color: Color(0xFFFF5A65),
+                            color: const Color(0xFFFF5A65),
                           ),
                         ),
                         SizedBox(width: gap),
@@ -312,9 +312,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             category: savedTask.category)
         : await provider.updateTask(savedTask);
     if (!success || !mounted) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(provider.errorMessage ?? 'Could not save task.')));
+      }
       return null;
     }
     return existingTask == null

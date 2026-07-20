@@ -17,21 +17,19 @@ class StudyTask {
     this.priority = TaskPriority.medium,
     DateTime? dueDateTime,
     DateTime? dueDate,
-    String description = '',
+    this.description = '',
     this.status = TaskStatus.toDo,
     bool? completed,
     DateTime? createdAt,
     DateTime? updatedAt,
-    DateTime? completedAt,
+    this.completedAt,
   })  : id = id ?? '',
         title = title.trim(),
         subjectId = subjectId ?? course,
         dueLabel = due ?? '',
         dueDateTime = dueDateTime ?? dueDate ?? DateTime.now(),
-        description = description,
         createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? createdAt ?? DateTime.now(),
-        completedAt = completedAt,
         completed = completed ?? status == TaskStatus.done;
 
   final String id;

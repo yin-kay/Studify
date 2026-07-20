@@ -133,7 +133,7 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
         itemBuilder: (context, index) => Card(
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: _courseColor(index).withOpacity(.15),
+              backgroundColor: _courseColor(index).withValues(alpha: .15),
               child: Icon(Icons.book_rounded, color: _courseColor(index)),
             ),
             title: Text(
@@ -142,8 +142,9 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
             ),
             trailing: PopupMenuButton<String>(
               onSelected: (value) {
-                if (value == 'edit')
+                if (value == 'edit') {
                   _showCourseDialog(subject: subjects[index]);
+                }
                 if (value == 'delete') _confirmDeleteCourse(subjects[index]);
               },
               itemBuilder: (_) => const [
@@ -193,10 +194,11 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
     if (shouldDelete == true && mounted) {
       final provider = context.read<SubjectProvider>();
       final success = await provider.deleteSubject(subject.id);
-      if (!success && mounted)
+      if (!success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content:
                 Text(provider.errorMessage ?? 'Could not delete subject.')));
+      }
     }
   }
 
@@ -238,11 +240,12 @@ class _CourseManagementScreenState extends State<CourseManagementScreen> {
     final success = subject == null
         ? await provider.addSubject(
             name: value,
-            colorValue: _courseColor(provider.subjects.length).value)
+            colorValue: _courseColor(provider.subjects.length).toARGB32())
         : await provider.updateSubject(subject.copyWith(name: value));
-    if (!success && mounted)
+    if (!success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(provider.errorMessage ?? 'Could not save subject.')));
+    }
   }
 }
 

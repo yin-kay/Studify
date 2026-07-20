@@ -14,8 +14,9 @@ class TaskRepository {
 
   Future<StudyTask> addTask(StudyTask task) async {
     final id = task.id.trim().isEmpty ? _uuid.v4() : task.id.trim();
-    if (await _service.contains(id))
+    if (await _service.contains(id)) {
       throw const ValidationException('A task with this ID already exists.');
+    }
     final now = DateTime.now();
     final saved = _validated(task.copyWith(
         id: id,
@@ -108,8 +109,9 @@ class TaskRepository {
   }
 
   StudyTask _validated(StudyTask task) {
-    if (task.id.trim().isEmpty)
+    if (task.id.trim().isEmpty) {
       throw const ValidationException('Task ID is required.');
+    }
     return task.copyWith(
         title: Validators.taskTitle(task.title),
         description: Validators.description(task.description));
@@ -119,8 +121,9 @@ class TaskRepository {
     try {
       await operation();
     } catch (error) {
-      if (error is ValidationException || error is TaskNotFoundException)
+      if (error is ValidationException || error is TaskNotFoundException) {
         rethrow;
+      }
       throw const AppDatabaseException(
           'The task could not be saved to local storage.');
     }

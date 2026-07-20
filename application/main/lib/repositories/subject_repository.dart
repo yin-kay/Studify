@@ -17,10 +17,11 @@ class SubjectRepository {
     final name = Validators.subjectName(value.name);
     await _ensureUnique(name);
     final id = value.id.trim().isEmpty ? _uuid.v4() : value.id.trim();
-    if (await _subjects.contains(id))
+    if (await _subjects.contains(id)) {
       throw const DuplicateSubjectException(
         'A subject with this ID already exists.',
       );
+    }
     final now = DateTime.now();
     final saved = value.copyWith(
       id: id,
@@ -71,9 +72,10 @@ class SubjectRepository {
     final duplicate = (await _subjects.getAll()).any(
       (s) => s.id != exceptId && s.name.toLowerCase() == name.toLowerCase(),
     );
-    if (duplicate)
+    if (duplicate) {
       throw const DuplicateSubjectException(
         'A subject with this name already exists.',
       );
+    }
   }
 }

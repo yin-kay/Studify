@@ -37,8 +37,10 @@ class TaskCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         splashFactory: InkRipple.splashFactory,
-        splashColor: Theme.of(context).colorScheme.primary.withOpacity(.08),
-        highlightColor: Theme.of(context).colorScheme.primary.withOpacity(.04),
+        splashColor:
+            Theme.of(context).colorScheme.primary.withValues(alpha: .08),
+        highlightColor:
+            Theme.of(context).colorScheme.primary.withValues(alpha: .04),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
@@ -103,7 +105,7 @@ class TaskCard extends StatelessWidget {
                                 vertical: 5,
                               ),
                               decoration: BoxDecoration(
-                                color: color.withOpacity(.11),
+                                color: color.withValues(alpha: .11),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(

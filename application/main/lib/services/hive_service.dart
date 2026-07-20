@@ -1,4 +1,3 @@
-import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/study_task.dart';
 import '../models/subject.dart';
@@ -33,8 +32,9 @@ class HiveService {
   Box<Subject> get subjects => _box<Subject>(HiveBoxNames.subjects);
   Box<dynamic> get settings => _box<dynamic>(HiveBoxNames.settings);
   Box<T> _box<T>(String name) {
-    if (!_initialized || !Hive.isBoxOpen(name))
+    if (!_initialized || !Hive.isBoxOpen(name)) {
       throw StateError('Local storage is not initialized.');
+    }
     return Hive.box<T>(name);
   }
 

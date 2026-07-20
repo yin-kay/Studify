@@ -133,8 +133,9 @@ class TaskProvider extends ChangeNotifier {
   }
 
   String _message(Object e) {
-    if (e is ValidationException || e is AppDatabaseException)
+    if (e is ValidationException || e is AppDatabaseException) {
       return e.toString();
+    }
     if (e is TaskNotFoundException) return 'This task no longer exists.';
     return 'The task operation could not be completed.';
   }

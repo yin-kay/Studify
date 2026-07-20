@@ -485,7 +485,9 @@ class _ChoiceButton extends StatelessWidget {
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
         decoration: BoxDecoration(
-          color: selected ? color.withOpacity(.14) : colors.surfaceContainerLow,
+          color: selected
+              ? color.withValues(alpha: .14)
+              : colors.surfaceContainerLow,
           border: Border.all(color: selected ? color : colors.outlineVariant),
         ),
         child: Text(
