@@ -14,6 +14,7 @@ class TaskFormScreen extends StatefulWidget {
 }
 
 class _TaskFormScreenState extends State<TaskFormScreen> {
+  static const _noSubjectValue = '__none__';
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
@@ -134,18 +135,23 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               const _FieldLabel('Subject/Course'),
               const SizedBox(height: 7),
               DropdownButtonFormField<String>(
-                initialValue: _subjectId,
+                initialValue: _subjectId ?? _noSubjectValue,
                 decoration: _inputDecoration('Select subject'),
-                items: subjects
-                    .map(
-                      (subject) => DropdownMenuItem(
-                        value: subject.id,
-                        child: Text(subject.name),
-                      ),
-                    )
-                    .toList(),
+                items: [
+                  const DropdownMenuItem<String>(
+                    value: _noSubjectValue,
+                    child: Text('None'),
+                  ),
+                  ...subjects.map(
+                    (subject) => DropdownMenuItem(
+                      value: subject.id,
+                      child: Text(subject.name),
+                    ),
+                  ),
+                ],
                 onChanged: (value) {
-                  setState(() => _subjectId = value);
+                  setState(() =>
+                      _subjectId = value == _noSubjectValue ? null : value);
                 },
               ),
               const SizedBox(height: 18),
