@@ -9,6 +9,8 @@ import 'screens/dashboard_screen.dart';
 import 'services/hive_service.dart';
 import 'services/subject_service.dart';
 import 'services/task_service.dart';
+import 'package:device_preview/device_preview.dart';
+import 'package:flutter/foundation.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,11 +28,19 @@ Future<void> main() async {
     subjectProvider.loadSubjects(),
     themeProvider.load()
   ]);
-  runApp(MultiProvider(providers: [
-    ChangeNotifierProvider.value(value: taskProvider),
-    ChangeNotifierProvider.value(value: subjectProvider),
-    ChangeNotifierProvider.value(value: themeProvider),
-  ], child: const StudifyApp()));
+  runApp(
+    DevicePreview(
+      enabled: !kReleaseMode,
+      builder: (context) => MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: taskProvider),
+          ChangeNotifierProvider.value(value: subjectProvider),
+          ChangeNotifierProvider.value(value: themeProvider),
+        ],
+        child: const StudifyApp(),
+      ),
+    ),
+  );
 }
 
 class StudifyApp extends StatelessWidget {
@@ -39,6 +49,9 @@ class StudifyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
     return MaterialApp(
+      useInheritedMediaQuery: true,
+      locale: DevicePreview.locale(context),
+      builder: DevicePreview.appBuilder,
       debugShowCheckedModeBanner: false,
       title: 'Studify',
       theme: _theme(Brightness.light),
@@ -46,7 +59,9 @@ class StudifyApp extends StatelessWidget {
       themeMode: theme.themeMode,
       themeAnimationDuration: const Duration(milliseconds: 350),
       home: DashboardScreen(
-          darkMode: theme.isDark, onDarkModeChanged: theme.setDarkMode),
+        darkMode: theme.isDark,
+        onDarkModeChanged: theme.setDarkMode,
+      ),
     );
   }
 

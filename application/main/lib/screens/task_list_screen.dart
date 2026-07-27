@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/study_task.dart';
 import '../widgets/task_card.dart';
 
+import 'package:intl/intl.dart';
+
 enum _TaskSortOption { dueDate, priority }
 
 class TaskListScreen extends StatefulWidget {
@@ -82,7 +84,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Hello, student! (9:41 AM)',
+                'Hello, student! (${DateFormat('h:mm a').format(DateTime.now())})',
                 style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
               ),
               const SizedBox(height: 18),

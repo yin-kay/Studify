@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/study_task.dart';
 import '../widgets/task_card.dart';
 
+import 'package:intl/intl.dart';
+
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({
     required this.tasks,
@@ -76,7 +78,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Hello, student! (9:41 AM)',
+                'Hello, student! (${DateFormat('h:mm a').format(DateTime.now())})',
                 style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
               ),
               const SizedBox(height: 14),

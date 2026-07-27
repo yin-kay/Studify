@@ -11,6 +11,9 @@ import 'task_list_screen.dart';
 import 'task_detail_screen.dart';
 import 'settings_screen.dart';
 
+import 'dart:async';
+import 'package:intl/intl.dart';
+
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({
     required this.darkMode,
@@ -28,6 +31,10 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
   late final PageController _pageController;
+
+  DateTime _currentDateTime = DateTime.now();
+  Timer? _clockTimer;
+
   List<StudyTask> get _tasks => context.read<TaskProvider>().tasks;
 
   Color _priorityColor(TaskPriority priority) => switch (priority) {
@@ -43,10 +50,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _pageController = PageController();
+
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) {
+        setState(() {
+          _currentDateTime = DateTime.now();
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
+    _clockTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -173,7 +189,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Hello, student! (9:41 AM)',
+                      'Hello, student! (${DateFormat('h:mm a').format(_currentDateTime)})',
                       style: TextStyle(
                         color: colors.onSurfaceVariant,
                         fontSize: 13,
@@ -181,7 +197,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   Text(
-                    _formattedDate(),
+                    DateFormat('dd MMM yyyy').format(_currentDateTime),
                     style: TextStyle(
                       color: colors.onSurfaceVariant,
                       fontSize: 13,
@@ -270,25 +286,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  String _formattedDate() {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final now = DateTime.now();
-    return '${now.day.toString().padLeft(2, '0')} '
-        '${months[now.month - 1]} ${now.year}';
-  }
+  // String _formattedDate() {
+  //   const months = [
+  //     'Jan',
+  //     'Feb',
+  //     'Mar',
+  //     'Apr',
+  //     'May',
+  //     'Jun',
+  //     'Jul',
+  //     'Aug',
+  //     'Sep',
+  //     'Oct',
+  //     'Nov',
+  //     'Dec',
+  //   ];
+  //   final now = DateTime.now();
+  //   return '${now.day.toString().padLeft(2, '0')} '
+  //       '${months[now.month - 1]} ${now.year}';
+  // }
 
   Future<StudyTask?> _showTaskForm([StudyTask? existingTask]) async {
     final savedTask = await Navigator.push<StudyTask>(
